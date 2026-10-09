@@ -10,6 +10,9 @@ import { firebaseConfig, FAMILIA } from './firebase-config.js';
 
 const STORAGE_KEY = 'gastos-familia-v1';
 
+// Subir este número (y CACHE en sw.js) en cada cambio, para poder ver en Ajustes qué versión está usando cada celular.
+const APP_VERSION = '4';
+
 const DEFAULT_SETTINGS = {
   members: ['Persona 1', 'Persona 2'],
   categories: [
@@ -369,6 +372,7 @@ function renderSettings() {
   $('#moneda').value = state.currency;
   if (document.activeElement !== $('#presupuesto')) $('#presupuesto').value = state.budget ?? '';
   $('#cuenta-email').textContent = auth?.currentUser?.email ?? '';
+  $('#version').textContent = APP_VERSION;
 }
 
 function renderSelects() {
@@ -756,6 +760,25 @@ function start() {
 
 start();
 
+// ---------- Actualizaciones ----------
+// Una app anclada al inicio casi nunca se vuelve a abrir desde cero: el celular la retoma de memoria.
+// Por eso se busca una versión nueva cada vez que vuelve a primer plano y, si la hay, se recarga sola
+// (esperando a que se cierre el formulario si se está cargando un gasto).
+
+function reloadWhenIdle() {
+  const dialog = $('#dialogo-gasto');
+  if (dialog.open) dialog.addEventListener('close', () => location.reload(), { once: true });
+  else location.reload();
+}
+
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker no registrado', err));
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) reloadWhenIdle();
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((registration) => {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') registration.update().catch(() => {});
+    });
+  }).catch((err) => console.warn('Service worker no registrado', err));
 }
