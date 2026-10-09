@@ -57,6 +57,15 @@
         </div>
       </div>
 
+      <div class="card" id="card-fijos" hidden>
+        <div class="card-header">
+          <h2>Gastos fijos del mes</h2>
+          <span class="badge" id="fijos-estado"></span>
+        </div>
+        <ul class="expense-list" id="lista-fijos-pendientes"></ul>
+        <ul class="done-list" id="lista-fijos-cargados"></ul>
+      </div>
+
       <div class="card">
         <h2>Por categoría</h2>
         <ul class="breakdown" id="por-categoria"></ul>
@@ -96,6 +105,17 @@
         <form class="inline-form" id="form-categoria">
           <input type="text" id="nueva-categoria-emoji" placeholder="🙂" maxlength="4" class="emoji-input" aria-label="Emoji">
           <input type="text" id="nueva-categoria" placeholder="Categoría" required maxlength="30">
+          <button type="submit">Añadir</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Gastos fijos del mes</h2>
+        <p class="muted small">Cada mes aparecen en el Resumen como pendientes de cargar, con el monto del mes anterior como referencia.</p>
+        <ul class="chips" id="lista-fijos"></ul>
+        <form class="inline-form" id="form-fijo">
+          <input type="text" id="nuevo-fijo" placeholder="Ej. Agua" required maxlength="40">
+          <select id="nuevo-fijo-categoria" aria-label="Categoría del gasto fijo"></select>
           <button type="submit">Añadir</button>
         </form>
       </div>
@@ -154,6 +174,7 @@
       <label class="field">Importe
         <input type="number" id="g-importe" min="0.01" step="any" inputmode="decimal" required autofocus>
       </label>
+      <button type="button" class="hint" id="g-sugerido" hidden></button>
       <label class="field">Descripción
         <input type="text" id="g-descripcion" maxlength="80" placeholder="Ej. Supermercado">
       </label>

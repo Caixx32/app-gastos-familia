@@ -6,6 +6,7 @@ App para anotar los gastos de la casa entre dos (o más) personas. **Lo que carg
 
 - **Cargar gastos**: monto, descripción, categoría, quién pagó y fecha.
 - **Resumen del mes**: total gastado, cuánto por categoría y cuánto puso cada uno.
+- **Gastos fijos del mes** (expensas, luz, gas, internet, colegio…): cada mes aparecen en el Resumen como *pendientes de cargar*, con el monto del mes anterior como referencia. Tocás uno, ponés el monto de este mes y queda cargado. La lista se edita en Ajustes.
 - **Presupuesto mensual** opcional, con barra que se pone naranja al 80 % y roja al pasarse.
 - **Lista de gastos** por día, con filtros por persona, categoría y búsqueda. Tocando un gasto se edita o se borra.
 - **Ajustes compartidos**: personas, categorías, moneda y presupuesto son los mismos para los dos.
@@ -74,6 +75,5 @@ El plan gratuito de Firebase (Spark) permite 50.000 lecturas y 20.000 escrituras
 
 ## Ideas para más adelante
 
-- Gastos fijos que se repiten todos los meses (alquiler, servicios, suscripciones).
 - Gráfico de cómo van los gastos mes a mes.
 - Cuentas claras: quién le debe a quién si los gastos se dividen a medias.

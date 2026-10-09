@@ -26,7 +26,17 @@ const DEFAULT_SETTINGS = {
   ],
   currency: 'ARS',
   budget: null,
+  recurring: [], // { id, name, category, since: 'YYYY-MM' }
 };
+
+// Gastos fijos con los que arranca el libro. Se pueden cambiar en Ajustes.
+const DEFAULT_RECURRING = [
+  { name: 'Expensas', category: 'Casa' },
+  { name: 'Luz', category: 'Servicios' },
+  { name: 'Gas', category: 'Servicios' },
+  { name: 'Internet', category: 'Servicios' },
+  { name: 'Colegio', category: 'Educación' },
+];
 
 // ---------- Estado ----------
 // Los ajustes viven en el documento familias/{FAMILIA} y cada gasto en familias/{FAMILIA}/gastos/{id}.
@@ -34,7 +44,7 @@ const DEFAULT_SETTINGS = {
 
 const state = {
   ...structuredClone(DEFAULT_SETTINGS),
-  expenses: [], // { id, amount, description, category, member, date: 'YYYY-MM-DD', createdAt, createdBy }
+  expenses: [], // { id, amount, description, category, member, date: 'YYYY-MM-DD', createdAt, createdBy, recurringId? }
 };
 
 const today = new Date();
@@ -93,6 +103,60 @@ function sumBy(list, field) {
   const totals = new Map();
   for (const e of list) totals.set(e[field], (totals.get(e[field]) || 0) + e.amount);
   return [...totals.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function newRecurring(name, category) {
+  return { id: doc(expensesRef).id, name, category, since: monthKey(thisMonth()) };
+}
+
+function thisMonth() {
+  const now = new Date();
+  return { year: now.getFullYear(), month: now.getMonth() };
+}
+
+function monthName(key) {
+  const [y, m] = key.split('-').map(Number);
+  return capitalize(new Date(y, m - 1, 1).toLocaleDateString('es', { month: 'long' }));
+}
+
+// Un gasto cuenta para un fijo si se cargó desde él o, si se cargó a mano, si tiene el mismo nombre.
+function isRecurringExpense(item, e) {
+  if (e.recurringId) return e.recurringId === item.id;
+  return (e.description || '').trim().toLowerCase() === item.name.trim().toLowerCase();
+}
+
+// Monto del último mes anterior a `key` en que se cargó el fijo (sumando si se cargó en partes).
+function previousAmount(item, key) {
+  const byMonth = new Map();
+  for (const e of state.expenses) {
+    const month = e.date.slice(0, 7);
+    if (month < key && isRecurringExpense(item, e)) byMonth.set(month, (byMonth.get(month) || 0) + e.amount);
+  }
+  if (byMonth.size === 0) return null;
+  const month = [...byMonth.keys()].sort().pop();
+  return { month, amount: byMonth.get(month) };
+}
+
+// Estado de los fijos en el mes que se está viendo. Los meses futuros no tienen pendientes.
+function recurringOfMonth() {
+  const key = monthKey(currentMonth);
+  if (key > monthKey(thisMonth())) return [];
+  const monthExpenses = expensesOfMonth();
+  return state.recurring
+    .filter((item) => !item.since || item.since <= key)
+    .map((item) => ({
+      item,
+      loaded: monthExpenses.filter((e) => isRecurringExpense(item, e)),
+      previous: previousAmount(item, key),
+    }));
+}
+
+function previousLabel(previous, key) {
+  if (!previous) return 'Sin monto anterior';
+  const [y, m] = key.split('-').map(Number);
+  const lastMonth = monthKey({ year: m === 1 ? y - 1 : y, month: (m + 10) % 12 });
+  const when = previous.month === lastMonth ? 'Mes pasado' : monthName(previous.month);
+  return `${when}: ${formatMoney(previous.amount)}`;
 }
 
 function el(tag, props = {}, ...children) {
@@ -198,6 +262,49 @@ function renderSummary() {
   renderBreakdown($('#por-persona'), sumBy(list, 'member'), (m) => m);
 }
 
+function renderRecurring() {
+  const card = $('#card-fijos');
+  const rows = recurringOfMonth();
+  card.hidden = rows.length === 0;
+  if (rows.length === 0) return;
+
+  const key = monthKey(currentMonth);
+  const pending = rows.filter((r) => r.loaded.length === 0);
+  const loaded = rows.filter((r) => r.loaded.length > 0);
+  $('#fijos-estado').textContent = pending.length === 0
+    ? 'Todo cargado ✓'
+    : `${pending.length} ${pending.length === 1 ? 'pendiente' : 'pendientes'}`;
+  $('#fijos-estado').classList.toggle('done', pending.length === 0);
+
+  const ul = $('#lista-fijos-pendientes');
+  ul.replaceChildren();
+  for (const { item, previous } of pending) {
+    const button = el('button', { type: 'button', className: 'expense pending' },
+      el('span', { className: 'icon', textContent: categoryEmoji(item.category) }),
+      el('span', { className: 'info' },
+        el('div', { className: 'title', textContent: item.name }),
+        el('div', { className: 'meta', textContent: previousLabel(previous, key) }),
+      ),
+      el('span', { className: 'action', textContent: 'Cargar' }),
+    );
+    button.addEventListener('click', () => openExpenseDialog(null, { recurring: item, previous }));
+    ul.append(el('li', {}, button));
+  }
+
+  const done = $('#lista-fijos-cargados');
+  done.replaceChildren();
+  for (const { item, loaded: expenses, previous } of loaded) {
+    const amount = expenses.reduce((acc, e) => acc + e.amount, 0);
+    const button = el('button', { type: 'button', className: 'done-row' },
+      el('span', { textContent: `✓ ${item.name}` }),
+      el('span', { className: 'meta', textContent: previous ? previousLabel(previous, key) : '' }),
+      el('span', { className: 'amount', textContent: formatMoney(amount) }),
+    );
+    button.addEventListener('click', () => openExpenseDialog(expenses[0]));
+    done.append(el('li', {}, button));
+  }
+}
+
 function renderExpenses() {
   const member = $('#filtro-persona').value;
   const category = $('#filtro-categoria').value;
@@ -251,6 +358,14 @@ function renderSettings() {
     cats.append(el('li', {}, el('span', { textContent: `${cat.emoji} ${cat.name}` }), remove));
   }
 
+  const fixed = $('#lista-fijos');
+  fixed.replaceChildren();
+  for (const item of state.recurring) {
+    const remove = el('button', { type: 'button', textContent: '✕', title: `Quitar ${item.name}` });
+    remove.addEventListener('click', () => removeRecurring(item));
+    fixed.append(el('li', {}, el('span', { textContent: `${categoryEmoji(item.category)} ${item.name}` }), remove));
+  }
+
   $('#moneda').value = state.currency;
   if (document.activeElement !== $('#presupuesto')) $('#presupuesto').value = state.budget ?? '';
   $('#cuenta-email').textContent = auth?.currentUser?.email ?? '';
@@ -261,6 +376,7 @@ function renderSelects() {
   const catOpts = state.categories.map((c) => ({ value: c.name, label: `${c.emoji} ${c.name}` }));
   fillSelect($('#filtro-persona'), memberOpts, { allLabel: 'Todas las personas' });
   fillSelect($('#filtro-categoria'), catOpts, { allLabel: 'Todas las categorías' });
+  fillSelect($('#nuevo-fijo-categoria'), catOpts);
   // Los desplegables del formulario se rellenan al abrirlo para no pisar lo que se está escribiendo.
   if (!$('#dialogo-gasto').open) {
     fillSelect($('#g-persona'), memberOpts);
@@ -272,6 +388,7 @@ function render() {
   renderMonthLabel();
   renderSelects();
   renderSummary();
+  renderRecurring();
   renderExpenses();
   renderSettings();
 }
@@ -283,11 +400,15 @@ function startSync(user) {
   let settingsLoaded = false;
 
   unsubscribers.push(onSnapshot(familyRef, { includeMetadataChanges: true }, (snap) => {
+    const defaultRecurring = () => DEFAULT_RECURRING.map((r) => newRecurring(r.name, r.category));
     if (snap.exists()) {
-      Object.assign(state, structuredClone(DEFAULT_SETTINGS), snap.data());
+      const data = snap.data();
+      Object.assign(state, structuredClone(DEFAULT_SETTINGS), data);
+      // Libros creados antes de que existieran los gastos fijos: se les agrega la lista inicial.
+      if (!('recurring' in data) && !snap.metadata.fromCache) saveSettings({ recurring: defaultRecurring() });
     } else if (!snap.metadata.fromCache) {
       // Primera vez que alguien entra: se crea el libro con los ajustes por defecto.
-      write(setDoc(familyRef, DEFAULT_SETTINGS));
+      write(setDoc(familyRef, { ...DEFAULT_SETTINGS, recurring: defaultRecurring() }));
     }
     if (!snap.metadata.fromCache && !settingsLoaded) {
       settingsLoaded = true;
@@ -348,6 +469,7 @@ function expenseData(e) {
     date: String(e.date),
     createdAt: Number(e.createdAt) || Date.now(),
     createdBy: e.createdBy ?? auth.currentUser?.email ?? null,
+    ...(e.recurringId ? { recurringId: String(e.recurringId) } : {}),
   };
 }
 
@@ -379,11 +501,19 @@ function removeCategory(name) {
   saveSettings({ categories: state.categories.filter((c) => c.name !== name) });
 }
 
-let editingId = null;
+function removeRecurring(item) {
+  if (!confirm(`¿Quitar "${item.name}" de los gastos fijos? Los gastos ya cargados no se borran.`)) return;
+  saveSettings({ recurring: state.recurring.filter((r) => r.id !== item.id) });
+}
 
-function openExpenseDialog(expense = null) {
+let editingId = null;
+let editingRecurringId = null;
+
+// `recurring` es el gasto fijo desde el que se carga (opcional) y `previous` su monto anterior.
+function openExpenseDialog(expense = null, { recurring = null, previous = null } = {}) {
   editingId = expense?.id ?? null;
-  $('#dialogo-titulo').textContent = expense ? 'Editar gasto' : 'Nuevo gasto';
+  editingRecurringId = recurring?.id ?? null;
+  $('#dialogo-titulo').textContent = expense ? 'Editar gasto' : recurring ? `Cargar ${recurring.name}` : 'Nuevo gasto';
   $('#g-borrar').hidden = !expense;
 
   fillSelect($('#g-persona'), state.members.map((m) => ({ value: m, label: m })));
@@ -396,8 +526,17 @@ function openExpenseDialog(expense = null) {
   }
 
   $('#g-importe').value = expense?.amount ?? '';
-  $('#g-descripcion').value = expense?.description ?? '';
-  $('#g-categoria').value = expense?.category ?? state.categories[0].name;
+  $('#g-importe').placeholder = previous ? String(previous.amount) : '';
+  $('#g-descripcion').value = expense?.description ?? recurring?.name ?? '';
+  $('#g-categoria').value = expense?.category ?? recurring?.category ?? state.categories[0].name;
+  if (!$('#g-categoria').value) $('#g-categoria').value = state.categories[0].name;
+
+  const suggestion = $('#g-sugerido');
+  suggestion.hidden = !previous;
+  if (previous) {
+    suggestion.textContent = `Usar el mismo monto (${previousLabel(previous, monthKey(currentMonth))})`;
+    suggestion.onclick = () => { $('#g-importe').value = previous.amount; };
+  }
   $('#g-persona').value = expense?.member ?? (localStorage.getItem(`${STORAGE_KEY}-last-member`) || state.members[0]);
   if (!$('#g-persona').value) $('#g-persona').value = state.members[0];
 
@@ -427,7 +566,8 @@ $('#form-gasto').addEventListener('submit', (ev) => {
   if (editingId) {
     write(setDoc(doc(expensesRef, editingId), data, { merge: true }));
   } else {
-    write(setDoc(doc(expensesRef), { ...data, createdAt: Date.now(), createdBy: auth.currentUser.email }));
+    const extra = editingRecurringId ? { recurringId: editingRecurringId } : {};
+    write(setDoc(doc(expensesRef), { ...data, ...extra, createdAt: Date.now(), createdBy: auth.currentUser.email }));
   }
   localStorage.setItem(`${STORAGE_KEY}-last-member`, data.member);
 
@@ -489,6 +629,15 @@ $('#form-categoria').addEventListener('submit', (ev) => {
   saveSettings({ categories: [...state.categories, { name, emoji }] });
   $('#nueva-categoria').value = '';
   $('#nueva-categoria-emoji').value = '';
+});
+
+$('#form-fijo').addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  const name = $('#nuevo-fijo').value.trim();
+  if (!name) return;
+  if (state.recurring.some((r) => r.name.toLowerCase() === name.toLowerCase())) return alert('Ese gasto fijo ya existe.');
+  saveSettings({ recurring: [...state.recurring, newRecurring(name, $('#nuevo-fijo-categoria').value)] });
+  $('#nuevo-fijo').value = '';
 });
 
 $('#moneda').addEventListener('change', (ev) => saveSettings({ currency: ev.target.value }));

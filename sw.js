@@ -1,5 +1,5 @@
 // Cache sencillo para que la app funcione sin conexión.
-const CACHE = 'gastos-familia-v2';
+const CACHE = 'gastos-familia-v3';
 const ASSETS = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'firebase-config.js'];
 
 self.addEventListener('install', (event) => {
