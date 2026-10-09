@@ -11,7 +11,7 @@ import { firebaseConfig, FAMILIA } from './firebase-config.js';
 const STORAGE_KEY = 'gastos-familia-v1';
 
 // Subir este número (y CACHE en sw.js) en cada cambio, para poder ver en Ajustes qué versión está usando cada celular.
-const APP_VERSION = '4';
+const APP_VERSION = '5';
 
 const DEFAULT_SETTINGS = {
   members: ['Persona 1', 'Persona 2'],
@@ -348,9 +348,11 @@ function renderSettings() {
   const members = $('#lista-personas');
   members.replaceChildren();
   for (const name of state.members) {
+    const rename = el('button', { type: 'button', textContent: '✎', title: `Cambiar el nombre de ${name}` });
+    rename.addEventListener('click', () => renameMember(name));
     const remove = el('button', { type: 'button', textContent: '✕', title: `Quitar ${name}` });
     remove.addEventListener('click', () => removeMember(name));
-    members.append(el('li', {}, el('span', { textContent: name }), remove));
+    members.append(el('li', {}, el('span', { textContent: name }), rename, remove));
   }
 
   const cats = $('#lista-categorias');
@@ -490,6 +492,30 @@ function importExpenses(expenses) {
 }
 
 // ---------- Acciones ----------
+
+// Cambia el nombre en la lista y en todos los gastos ya cargados. Si el nombre nuevo ya es de otra
+// persona de la lista, junta a las dos en una sola.
+function renameMember(oldName) {
+  const newName = (prompt(`Nuevo nombre para ${oldName}:`, oldName) || '').trim().slice(0, 30);
+  if (!newName || newName === oldName) return;
+  const merging = state.members.includes(newName);
+  if (merging && !confirm(`${newName} ya está en la lista. ¿Juntar los gastos de ${oldName} con los de ${newName}?`)) return;
+
+  const members = merging
+    ? state.members.filter((m) => m !== oldName)
+    : state.members.map((m) => (m === oldName ? newName : m));
+  const affected = state.expenses.filter((e) => e.member === oldName);
+
+  for (let i = 0; i === 0 || i < affected.length; i += 400) {
+    const batch = writeBatch(db);
+    if (i === 0) batch.set(familyRef, { members }, { merge: true });
+    for (const e of affected.slice(i, i + 400)) batch.update(doc(expensesRef, e.id), { member: newName });
+    write(batch.commit());
+  }
+  if (localStorage.getItem(`${STORAGE_KEY}-last-member`) === oldName) {
+    localStorage.setItem(`${STORAGE_KEY}-last-member`, newName);
+  }
+}
 
 function removeMember(name) {
   if (state.members.length <= 1) return alert('Tiene que haber al menos una persona.');

@@ -1,7 +1,7 @@
 // Cache sencillo para que la app funcione sin conexión.
 // Cambiar este nombre (junto con APP_VERSION en app.js) en cada versión nueva: así el celular detecta
 // que hay una actualización, la instala y la app se recarga sola.
-const CACHE = 'gastos-familia-v4';
+const CACHE = 'gastos-familia-v5';
 const ASSETS = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'firebase-config.js'];
 
 self.addEventListener('install', (event) => {
