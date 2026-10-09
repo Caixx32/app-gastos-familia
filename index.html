@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="Registro de gastos familiares">
+  <title>Gastos Familia</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Gastos Familia</h1>
+    <div class="month-nav">
+      <button type="button" id="prev-month" aria-label="Mes anterior">‹</button>
+      <span id="month-label"></span>
+      <button type="button" id="next-month" aria-label="Mes siguiente">›</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Resumen -->
+    <section id="view-resumen" class="view active">
+      <div class="card total-card">
+        <div>
+          <p class="muted">Gastado este mes</p>
+          <p class="big" id="total-mes">0</p>
+        </div>
+        <div class="budget">
+          <p class="muted" id="budget-label">Sin presupuesto</p>
+          <div class="bar"><div class="bar-fill" id="budget-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Por categoría</h2>
+        <ul class="breakdown" id="por-categoria"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Por persona</h2>
+        <ul class="breakdown" id="por-persona"></ul>
+      </div>
+    </section>
+
+    <!-- Movimientos -->
+    <section id="view-gastos" class="view">
+      <div class="filters">
+        <select id="filtro-persona" aria-label="Filtrar por persona"></select>
+        <select id="filtro-categoria" aria-label="Filtrar por categoría"></select>
+        <input type="search" id="filtro-texto" placeholder="Buscar…" aria-label="Buscar">
+      </div>
+      <ul class="expense-list" id="lista-gastos"></ul>
+      <p class="empty" id="lista-vacia" hidden>No hay gastos para este mes.</p>
+    </section>
+
+    <!-- Ajustes -->
+    <section id="view-ajustes" class="view">
+      <div class="card">
+        <h2>Personas</h2>
+        <ul class="chips" id="lista-personas"></ul>
+        <form class="inline-form" id="form-persona">
+          <input type="text" id="nueva-persona" placeholder="Nombre" required maxlength="30">
+          <button type="submit">Añadir</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Categorías</h2>
+        <ul class="chips" id="lista-categorias"></ul>
+        <form class="inline-form" id="form-categoria">
+          <input type="text" id="nueva-categoria-emoji" placeholder="🙂" maxlength="4" class="emoji-input" aria-label="Emoji">
+          <input type="text" id="nueva-categoria" placeholder="Categoría" required maxlength="30">
+          <button type="submit">Añadir</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Preferencias</h2>
+        <label class="field">Moneda
+          <select id="moneda">
+            <option value="EUR">Euro (€)</option>
+            <option value="USD">Dólar (US$)</option>
+            <option value="ARS">Peso argentino ($)</option>
+            <option value="MXN">Peso mexicano ($)</option>
+            <option value="CLP">Peso chileno ($)</option>
+            <option value="COP">Peso colombiano ($)</option>
+            <option value="UYU">Peso uruguayo ($)</option>
+            <option value="PEN">Sol (S/)</option>
+          </select>
+        </label>
+        <label class="field">Presupuesto mensual
+          <input type="number" id="presupuesto" min="0" step="any" inputmode="decimal" placeholder="Opcional">
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Datos</h2>
+        <p class="muted small">Los datos se guardan solo en este dispositivo. Exporta una copia para respaldarlos o pasarlos a otro móvil.</p>
+        <div class="button-row">
+          <button type="button" id="exportar-json">Exportar copia (JSON)</button>
+          <button type="button" id="exportar-csv">Exportar a Excel (CSV)</button>
+          <label class="button">Importar copia
+            <input type="file" id="importar" accept="application/json,.json" hidden>
+          </label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <button type="button" class="fab" id="nuevo-gasto" aria-label="Nuevo gasto">+</button>
+
+  <nav class="tabbar">
+    <button type="button" data-view="resumen" class="active">📊<span>Resumen</span></button>
+    <button type="button" data-view="gastos">📋<span>Gastos</span></button>
+    <button type="button" data-view="ajustes">⚙️<span>Ajustes</span></button>
+  </nav>
+
+  <dialog id="dialogo-gasto">
+    <form method="dialog" id="form-gasto">
+      <h2 id="dialogo-titulo">Nuevo gasto</h2>
+      <label class="field">Importe
+        <input type="number" id="g-importe" min="0.01" step="any" inputmode="decimal" required autofocus>
+      </label>
+      <label class="field">Descripción
+        <input type="text" id="g-descripcion" maxlength="80" placeholder="Ej. Supermercado">
+      </label>
+      <label class="field">Categoría
+        <select id="g-categoria" required></select>
+      </label>
+      <label class="field">Pagó
+        <select id="g-persona" required></select>
+      </label>
+      <label class="field">Fecha
+        <input type="date" id="g-fecha" required>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="danger" id="g-borrar" hidden>Borrar</button>
+        <span class="spacer"></span>
+        <button type="button" id="g-cancelar">Cancelar</button>
+        <button type="submit" class="primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

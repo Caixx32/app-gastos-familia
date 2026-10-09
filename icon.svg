@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <path d="M256 104 96 232h40v168h88V304h64v96h88V232h40z" fill="#fff"/>
+  <circle cx="256" cy="232" r="36" fill="#0f766e"/>
+  <text x="256" y="248" text-anchor="middle" font-family="system-ui, sans-serif" font-size="48" font-weight="700" fill="#fff">$</text>
+</svg>
