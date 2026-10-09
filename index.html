@@ -11,15 +11,37 @@
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body data-screen="loading">
   <header class="topbar">
-    <h1>Gastos Familia</h1>
+    <div class="brand">
+      <h1>Gastos Familia</h1>
+      <span id="sync-status" class="sync-status" data-kind="pending">Conectando…</span>
+    </div>
     <div class="month-nav">
       <button type="button" id="prev-month" aria-label="Mes anterior">‹</button>
       <span id="month-label"></span>
       <button type="button" id="next-month" aria-label="Mes siguiente">›</button>
     </div>
   </header>
+
+  <section class="screen-message" id="pantalla-config">
+    <h2>Falta conectar la app</h2>
+    <p>Para que los gastos se compartan entre los dos celulares, hay que pegar la configuración de Firebase en <code>firebase-config.js</code>. Los pasos están en el README.</p>
+  </section>
+
+  <section class="screen-message" id="pantalla-login">
+    <form id="form-login" class="card">
+      <h2>Entrar</h2>
+      <label class="field">Correo
+        <input type="email" id="login-email" autocomplete="username" required>
+      </label>
+      <label class="field">Contraseña
+        <input type="password" id="login-password" autocomplete="current-password" required>
+      </label>
+      <p class="error" id="login-error" role="alert"></p>
+      <button type="submit" class="primary wide">Entrar</button>
+    </form>
+  </section>
 
   <main>
     <!-- Resumen -->
@@ -82,9 +104,9 @@
         <h2>Preferencias</h2>
         <label class="field">Moneda
           <select id="moneda">
-            <option value="EUR">Euro (€)</option>
-            <option value="USD">Dólar (US$)</option>
             <option value="ARS">Peso argentino ($)</option>
+            <option value="USD">Dólar (US$)</option>
+            <option value="EUR">Euro (€)</option>
             <option value="MXN">Peso mexicano ($)</option>
             <option value="CLP">Peso chileno ($)</option>
             <option value="COP">Peso colombiano ($)</option>
@@ -99,13 +121,20 @@
 
       <div class="card">
         <h2>Datos</h2>
-        <p class="muted small">Los datos se guardan solo en este dispositivo. Exporta una copia para respaldarlos o pasarlos a otro móvil.</p>
+        <p class="muted small">Los gastos se comparten en tiempo real entre todos los que entran al libro. Podés bajar una copia cuando quieras.</p>
         <div class="button-row">
           <button type="button" id="exportar-json">Exportar copia (JSON)</button>
           <button type="button" id="exportar-csv">Exportar a Excel (CSV)</button>
-          <label class="button">Importar copia
+          <label class="button">Importar gastos
             <input type="file" id="importar" accept="application/json,.json" hidden>
           </label>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Cuenta</h2>
+        <p class="muted small">Sesión iniciada como <strong id="cuenta-email"></strong></p>
+        <div class="button-row">
+          <button type="button" id="cerrar-sesion">Cerrar sesión</button>
         </div>
       </div>
     </section>
@@ -146,6 +175,6 @@
     </form>
   </dialog>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

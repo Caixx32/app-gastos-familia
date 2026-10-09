@@ -224,3 +224,26 @@ dialog::backdrop { background: rgba(0, 0, 0, .45); }
 dialog h2 { margin: 0 0 16px; font-size: 1.15rem; }
 .dialog-actions { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
 .spacer { flex: 1; }
+
+/* ---------- Pantallas y sincronización ---------- */
+
+.brand { display: grid; gap: 2px; }
+.sync-status { font-size: .72rem; opacity: .9; display: inline-flex; align-items: center; gap: 5px; }
+.sync-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sync-status[data-kind="ok"]::before { background: #4ade80; }
+.sync-status[data-kind="pending"]::before { background: #fbbf24; }
+.sync-status[data-kind="offline"]::before { background: #f87171; }
+
+.screen-message { display: none; max-width: 420px; margin: 0 auto; padding: 32px 16px; }
+.screen-message h2 { margin-top: 0; }
+.screen-message code { background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; }
+.error { color: var(--danger); min-height: 1.2em; margin: 0 0 8px; font-size: .875rem; }
+.wide { width: 100%; }
+
+body[data-screen="config"] #pantalla-config,
+body[data-screen="login"] #pantalla-login { display: block; }
+body:not([data-screen="app"]) main,
+body:not([data-screen="app"]) .fab,
+body:not([data-screen="app"]) .tabbar,
+body:not([data-screen="app"]) .month-nav,
+body:not([data-screen="app"]) .sync-status { display: none; }
