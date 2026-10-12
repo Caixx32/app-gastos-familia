@@ -11,7 +11,7 @@ import { firebaseConfig, FAMILIA } from './firebase-config.js';
 const STORAGE_KEY = 'gastos-familia-v1';
 
 // Subir este número (y CACHE en sw.js) en cada cambio, para poder ver en Ajustes qué versión está usando cada celular.
-const APP_VERSION = '5';
+const APP_VERSION = '6';
 
 const DEFAULT_SETTINGS = {
   members: ['Persona 1', 'Persona 2'],
@@ -219,7 +219,8 @@ window.addEventListener('offline', updateSyncStatus);
 
 function renderMonthLabel() {
   const date = new Date(currentMonth.year, currentMonth.month, 1);
-  $('#month-label').textContent = capitalize(date.toLocaleDateString('es', { month: 'long', year: 'numeric' }));
+  // "Septiembre 2026" en vez de "septiembre de 2026", para que entre en una línea en celulares angostos.
+  $('#month-label').textContent = capitalize(date.toLocaleDateString('es', { month: 'long', year: 'numeric' }).replace(' de ', ' '));
 }
 
 function renderBreakdown(list, rows, labelFor) {
@@ -723,6 +724,48 @@ $('#importar').addEventListener('change', async (ev) => {
     alert(`No se pudo importar el archivo: ${err.message}`);
   }
 });
+
+// ---------- Apariencia ----------
+// Color, modo y tamaño de letra se guardan en cada celular (no se comparten). El <head> de index.html
+// los aplica antes de dibujar; acá se manejan los botones de Ajustes.
+
+const APPEARANCE_KEY = 'gastos-familia-apariencia';
+const APPEARANCE_DEFAULTS = { tema: 'verde', modo: 'auto', letra: 'normal' };
+
+function loadAppearance() {
+  try {
+    return { ...APPEARANCE_DEFAULTS, ...JSON.parse(localStorage.getItem(APPEARANCE_KEY) || '{}') };
+  } catch {
+    return { ...APPEARANCE_DEFAULTS };
+  }
+}
+
+function applyAppearance(prefs) {
+  const root = document.documentElement;
+  for (const [key, value] of Object.entries(prefs)) {
+    if (value === APPEARANCE_DEFAULTS[key]) delete root.dataset[key];
+    else root.dataset[key] = value;
+  }
+  document.querySelectorAll('[data-pref]').forEach((group) => {
+    group.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === prefs[group.dataset.pref])));
+  });
+  // La barra del sistema del celular toma el color del encabezado.
+  const accent = getComputedStyle(root).getPropertyValue('--accent').trim();
+  if (accent) document.querySelector('meta[name="theme-color"]').content = accent;
+}
+
+document.querySelectorAll('[data-pref] button').forEach((button) => {
+  button.addEventListener('click', () => {
+    const prefs = { ...loadAppearance(), [button.closest('[data-pref]').dataset.pref]: button.dataset.value };
+    try {
+      localStorage.setItem(APPEARANCE_KEY, JSON.stringify(prefs));
+    } catch {}
+    applyAppearance(prefs);
+  });
+});
+
+applyAppearance(loadAppearance());
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyAppearance(loadAppearance()));
 
 // ---------- Inicio de sesión ----------
 

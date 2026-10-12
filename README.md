@@ -10,6 +10,7 @@ App para anotar los gastos de la casa entre dos (o más) personas. **Lo que carg
 - **Presupuesto mensual** opcional, con barra que se pone naranja al 80 % y roja al pasarse.
 - **Lista de gastos** por día, con filtros por persona, categoría y búsqueda. Tocando un gasto se edita o se borra.
 - **Ajustes compartidos**: personas, categorías, moneda y presupuesto son los mismos para los dos.
+- **Apariencia a gusto de cada uno**: color (verde, azul, violeta o coral), modo claro/oscuro/automático y tamaño de letra. Se guarda en cada celular.
 - **Copias**: bajar todo en JSON o en CSV (para Excel), e importar gastos.
 
 ## Cómo funciona la sincronización

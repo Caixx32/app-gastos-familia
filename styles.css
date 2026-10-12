@@ -1,30 +1,78 @@
+/* ---------- Apariencia ----------
+   Cada color define su versión clara (-l) y oscura (-d). El modo (claro / oscuro / automático) y el
+   tamaño de letra se eligen en Ajustes y quedan guardados en cada celular (atributos en <html>). */
+
+:root {
+  --accent-l: #0f766e; --soft-l: #ccfbf1; --on-accent-l: #ffffff;
+  --accent-d: #2dd4bf; --soft-d: #134e4a; --on-accent-d: #042f2e;
+}
+:root[data-tema="azul"] {
+  --accent-l: #1d4ed8; --soft-l: #dbeafe; --on-accent-l: #ffffff;
+  --accent-d: #60a5fa; --soft-d: #1e3a5f; --on-accent-d: #0b1a33;
+}
+:root[data-tema="violeta"] {
+  --accent-l: #6d28d9; --soft-l: #ede9fe; --on-accent-l: #ffffff;
+  --accent-d: #a78bfa; --soft-d: #3b2a66; --on-accent-d: #1c1236;
+}
+:root[data-tema="coral"] {
+  --accent-l: #c2410c; --soft-l: #ffedd5; --on-accent-l: #ffffff;
+  --accent-d: #fb923c; --soft-d: #5a2a12; --on-accent-d: #2a1205;
+}
+
 :root {
   --bg: #f4f6f8;
   --surface: #ffffff;
   --text: #1f2933;
   --muted: #6b7280;
   --border: #e5e7eb;
-  --accent: #0f766e;
-  --accent-soft: #ccfbf1;
+  --accent: var(--accent-l);
+  --accent-soft: var(--soft-l);
+  --on-accent: var(--on-accent-l);
   --danger: #b91c1c;
   --warn: #d97706;
+  --badge-bg: #fef3c7;
+  --badge-text: #92400e;
   --radius: 14px;
-  color-scheme: light dark;
+  color-scheme: light;
+}
+
+:root[data-modo="oscuro"] {
+  --bg: #0f1418;
+  --surface: #1a2127;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #2b343c;
+  --accent: var(--accent-d);
+  --accent-soft: var(--soft-d);
+  --on-accent: var(--on-accent-d);
+  --danger: #f87171;
+  --warn: #fbbf24;
+  --badge-bg: #451a03;
+  --badge-text: #fcd34d;
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-modo="claro"]) {
     --bg: #0f1418;
     --surface: #1a2127;
     --text: #e5e7eb;
     --muted: #9ca3af;
     --border: #2b343c;
-    --accent: #2dd4bf;
-    --accent-soft: #134e4a;
+    --accent: var(--accent-d);
+    --accent-soft: var(--soft-d);
+    --on-accent: var(--on-accent-d);
     --danger: #f87171;
     --warn: #fbbf24;
+    --badge-bg: #451a03;
+    --badge-text: #fcd34d;
+    color-scheme: dark;
   }
 }
+
+/* Tamaño de letra: todo está medido en rem, así que alcanza con cambiar la base. */
+:root[data-letra="grande"] { font-size: 112.5%; }
+:root[data-letra="muy-grande"] { font-size: 125%; }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -44,24 +92,24 @@ button, input, select { font: inherit; color: inherit; }
   top: 0;
   z-index: 5;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap; /* con letra grande, el selector de mes baja a una segunda línea */
+  gap: 8px 12px;
 }
-@media (prefers-color-scheme: dark) { .topbar { color: #042f2e; } }
 .topbar h1 { font-size: 1.1rem; margin: 0; white-space: nowrap; }
 
-.month-nav { display: flex; align-items: center; gap: 6px; }
-.month-nav span { min-width: 9.5em; text-align: center; font-weight: 600; }
+.month-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.month-nav span { min-width: 7.6em; text-align: center; font-weight: 600; white-space: nowrap; }
 .month-nav button {
   background: rgba(255, 255, 255, .2);
   border: 0;
   border-radius: 8px;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   font-size: 1.2rem;
   cursor: pointer;
   color: inherit;
@@ -163,8 +211,7 @@ button, .button {
   cursor: pointer;
   display: inline-block;
 }
-.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-@media (prefers-color-scheme: dark) { .primary { color: #042f2e; } }
+.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
 .danger { color: var(--danger); }
 .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
@@ -177,14 +224,13 @@ button, .button {
   border-radius: 50%;
   border: 0;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 2rem;
   line-height: 1;
   padding: 0;
   box-shadow: 0 6px 16px rgba(0, 0, 0, .25);
   z-index: 6;
 }
-@media (prefers-color-scheme: dark) { .fab { color: #042f2e; } }
 
 .tabbar {
   position: fixed;
@@ -253,9 +299,8 @@ body:not([data-screen="app"]) .sync-status { display: none; }
 
 .card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .card-header h2 { margin: 0; }
-.badge { font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: #fef3c7; color: #92400e; }
+.badge { font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--badge-bg); color: var(--badge-text); }
 .badge.done { background: var(--accent-soft); color: var(--accent); }
-@media (prefers-color-scheme: dark) { .badge { background: #451a03; color: #fcd34d; } }
 
 .expense.pending { border-style: dashed; }
 .expense .action { font-size: .85rem; font-weight: 600; color: var(--accent); }
@@ -287,3 +332,22 @@ body:not([data-screen="app"]) .sync-status { display: none; }
   border: 0;
   color: var(--text);
 }
+
+/* ---------- Ajustes de apariencia ---------- */
+
+.option-label { font-size: .875rem; color: var(--muted); margin: 12px 0 6px; }
+.option-label:first-of-type { margin-top: 0; }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: var(--sw) padding-box;
+}
+.swatch[aria-pressed="true"] { border-color: var(--sw); box-shadow: inset 0 0 0 3px var(--surface); }
+.segmented { display: flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.segmented button { flex: 1; border: 0; border-radius: 0; padding: 9px 4px; background: var(--surface); font-size: .875rem; }
+.segmented button + button { border-left: 1px solid var(--border); }
+.segmented button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }

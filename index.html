@@ -10,6 +10,13 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // Aplica la apariencia guardada antes de dibujar la página, para que no parpadee con los colores por defecto.
+    try {
+      const prefs = JSON.parse(localStorage.getItem('gastos-familia-apariencia') || '{}');
+      for (const key of ['tema', 'modo', 'letra']) if (prefs[key]) document.documentElement.dataset[key] = prefs[key];
+    } catch {}
+  </script>
 </head>
 <body data-screen="loading">
   <header class="topbar">
@@ -118,6 +125,30 @@
           <select id="nuevo-fijo-categoria" aria-label="Categoría del gasto fijo"></select>
           <button type="submit">Añadir</button>
         </form>
+      </div>
+
+      <div class="card" id="apariencia">
+        <h2>Apariencia</h2>
+        <p class="muted small">Se guarda en este celular: cada uno puede elegir la suya.</p>
+        <p class="option-label">Color</p>
+        <div class="swatches" data-pref="tema">
+          <button type="button" class="swatch" data-value="verde" style="--sw:#0f766e" aria-label="Verde"></button>
+          <button type="button" class="swatch" data-value="azul" style="--sw:#1d4ed8" aria-label="Azul"></button>
+          <button type="button" class="swatch" data-value="violeta" style="--sw:#6d28d9" aria-label="Violeta"></button>
+          <button type="button" class="swatch" data-value="coral" style="--sw:#c2410c" aria-label="Coral"></button>
+        </div>
+        <p class="option-label">Modo</p>
+        <div class="segmented" data-pref="modo">
+          <button type="button" data-value="auto">Automático</button>
+          <button type="button" data-value="claro">Claro</button>
+          <button type="button" data-value="oscuro">Oscuro</button>
+        </div>
+        <p class="option-label">Tamaño de letra</p>
+        <div class="segmented" data-pref="letra">
+          <button type="button" data-value="normal">Normal</button>
+          <button type="button" data-value="grande">Grande</button>
+          <button type="button" data-value="muy-grande">Muy grande</button>
+        </div>
       </div>
 
       <div class="card">
